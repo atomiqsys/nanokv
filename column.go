@@ -4,6 +4,7 @@ package nanokv
 type Column interface {
 	Kind() ColumnKind
 	Len() int
+	ValueAt(p RowPosition) Value
 }
 
 // Numeric is the set of fixed width types a NumericColumn can hold
@@ -22,6 +23,10 @@ func (c *NumericColumn[T]) Len() int {
 
 func (c *NumericColumn[T]) Kind() ColumnKind {
 	return kindOf[T]()
+}
+
+func (c *NumericColumn[T]) ValueAt(p RowPosition) Value {
+	return Value{Kind: c.Kind(), Num: uint64(c.Data[p])}
 }
 
 // kindOf bridges compile-time type params to the runtime ColumnKind enum.
@@ -52,6 +57,13 @@ func (c *StringColumn) Len() int {
 
 func (c *StringColumn) Get(p RowPosition) string {
 	return string(c.Buf[c.Offsets[p]:c.Offsets[p+1]])
+}
+
+func (c *StringColumn) ValueAt(p RowPosition) Value {
+	return Value{
+		Kind: KindString,
+		Str:  c.Get(p),
+	}
 }
 
 func NewStringColumn(vals []string) *StringColumn {
